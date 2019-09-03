@@ -10,6 +10,7 @@ export default app.directive('formio', function() {
       form: '=?',
       submission: '=?',
       readOnly: '=?',
+      hideComponents: '=?',
       noSubmit: '=?',
       options: '<?'
     },
@@ -36,9 +37,23 @@ export default app.directive('formio', function() {
             $scope.options.readOnly = $scope.readOnly;
           }
 
+          // Allow legacy hideComponents support.
+          if (!$scope.options.hasOwnProperty('hide') && $scope.hideComponents) {
+            $scope.options.hide = $scope.hideComponents.reduce((option, key) => {
+              option[key] = true;
+              return option;
+            }, {});
+          }
+
+          // Add the live form parameter to the url.
+          if ($scope.src && ($scope.src.indexOf('live=') === -1)) {
+            $scope.src += ($scope.src.indexOf('?') === -1) ? '?' : '&';
+            $scope.src += 'live=1';
+          }
+
           if ($scope.src || $scope.form) {
             $scope.initialized = true;
-            Formio.createForm($scope.element, $scope.src || $scope.form, $scope.options).then(formio => {
+            Formio.createForm($scope.element, $scope.src || $scope.form, _.cloneDeep($scope.options)).then(formio => {
               formio.nosubmit = $scope.noSubmit;
               $scope.$emit('formLoad', formio.wizard ? formio.wizard : formio.form);
               $scope.formio = formio;
@@ -75,8 +90,7 @@ export default app.directive('formio', function() {
                 args[0] = 'formError';
                 break;
               case 'submit':
-                const submission = args[1];
-                args[0] = submission.saved ? 'formSubmission' : 'formSubmit';
+                args[0] = ($scope.formio.nosubmit || !$scope.formio._src) ? 'formSubmission' : 'formSubmit';
                 break;
               case 'submitDone':
                 args[0] = 'formSubmission';

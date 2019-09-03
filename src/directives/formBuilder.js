@@ -24,25 +24,19 @@ export default angular.module('formio').directive('formBuilder', function() {
           builderElement = element;
           builderElement.innerHTML = '';
           builder = new Formio.FormBuilder(builderElement, $scope.form, $scope.options);
-          builderReady = builder.setDisplay($scope.form.display);
+          builderReady = builder.ready;
         };
 
-        $scope.$on('buildSidebar', () => {
-          if (builder && builder.instance) {
-            builder.instance.buildSidebar();
-          }
-        });
+        $scope.display = $scope.form.display;
 
         // Detect when the display changes.
         $scope.$watch('form.display', display => {
           if (builderReady && display) {
             builderReady.then(() => {
-              if (display !== builder.form.display) {
+              if (display !== $scope.display) {
                 builder.setDisplay(display);
               }
-              if ($scope.url) {
-                builder.instance.url = $scope.url;
-              }
+              $scope.display = display;
             });
           }
         });
@@ -53,12 +47,10 @@ export default angular.module('formio').directive('formBuilder', function() {
           }
           if (builderReady) {
             builderReady.then(() => {
-              if (form !== builder.form) {
-                builder.setForm(form);
-              }
               if ($scope.url) {
                 builder.instance.url = $scope.url;
               }
+              builder.setForm(form);
             });
           }
         });
